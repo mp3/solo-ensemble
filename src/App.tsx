@@ -140,13 +140,13 @@ function App() {
     setAudioNodes(audioNodes.context, audioNodes.outputGain);
   }, [audioNodes.context, audioNodes.outputGain, setAudioNodes]);
   
-  // Synthesize when audio context is available and harmony changes
+  // Synthesize when audio context is available and harmony or settings change
   useEffect(() => {
     if (audioNodes.context && audioNodes.outputGain && harmony.length > 0) {
       console.log('Synthesizing harmony:', harmony.length, 'voices');
       synthesizeVoices(harmony);
     }
-  }, [audioNodes.context, audioNodes.outputGain, harmony, synthesizeVoices]);
+  }, [audioNodes.context, audioNodes.outputGain, harmony, synthesizeVoices, synthSettings]);
 
   const inputLevel = useLevelMeter(audioNodes.analyser);
 
