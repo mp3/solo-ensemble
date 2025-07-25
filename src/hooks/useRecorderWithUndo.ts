@@ -1,9 +1,9 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { Track } from '../types';
 import { useUndoRedo } from './useUndoRedo';
 
 export const useRecorderWithUndo = (stream: MediaStream | null, audioContext: AudioContext | null) => {
-  const [isRecording, setIsRecording] = useUndoRedo(false);
+  const [isRecording, setIsRecording] = useState(false);
   const {
     state: tracks,
     setState: setTracks,
