@@ -20,11 +20,15 @@ export interface SynthesizerSettings {
   vowel: string;
 }
 
-export const useSimpleSynthesizer = () => {
+export const useSimpleSynthesizer = (
+  initialVolumes?: VoiceVolumes,
+  initialUseFormants?: boolean,
+  initialVowel?: string
+) => {
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [outputGain, setOutputGain] = useState<GainNode | null>(null);
   const voiceNodes = useRef<Map<string, VoiceNode>>(new Map());
-  const [voiceVolumes, setVoiceVolumes] = useState<VoiceVolumes>({
+  const [voiceVolumes, setVoiceVolumes] = useState<VoiceVolumes>(initialVolumes || {
     soprano: 0.5,
     alto: 0.5,
     tenor: 0.5,
@@ -32,8 +36,8 @@ export const useSimpleSynthesizer = () => {
   });
   
   const [synthSettings, setSynthSettings] = useState<SynthesizerSettings>({
-    useFormants: false,
-    vowel: 'ah'
+    useFormants: initialUseFormants ?? true,  // Default to formant mode
+    vowel: initialVowel || 'ah'
   });
 
   // Method to set audio nodes

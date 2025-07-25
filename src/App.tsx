@@ -74,7 +74,11 @@ function App() {
     setVowel,
     toggleFormants,
     setAudioNodes
-  } = useSimpleSynthesizer();
+  } = useSimpleSynthesizer(
+    savedSettings?.voiceVolumes,
+    savedSettings?.useFormants,
+    savedSettings?.vowel
+  );
   const { 
     isRecording, 
     tracks, 
