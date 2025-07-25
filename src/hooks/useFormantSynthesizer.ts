@@ -3,7 +3,9 @@ import { HarmonyVoice } from '../types';
 import { FormantSynthesizer } from '../utils/formantSynthesis';
 
 interface VoiceNode {
-  synthesizer: FormantSynthesizer;
+  synthesizer?: FormantSynthesizer;
+  oscillator?: OscillatorNode;
+  gain?: GainNode;
   voiceType: 'soprano' | 'alto' | 'tenor' | 'bass';
 }
 
@@ -35,7 +37,7 @@ export const useFormantSynthesizer = (
   });
 
   const [synthSettings, setSynthSettings] = useState<SynthesizerSettings>({
-    useFormants: initialUseFormants ?? true,
+    useFormants: initialUseFormants ?? false,  // Default to simple mode
     vowel: initialVowel || 'ah'
   });
 
@@ -44,31 +46,67 @@ export const useFormantSynthesizer = (
 
     // Stop existing synthesizers
     voiceNodes.current.forEach(node => {
-      node.synthesizer.stop();
-      node.synthesizer.disconnect();
+      if (node.synthesizer) {
+        node.synthesizer.stop();
+        node.synthesizer.disconnect();
+      }
+      if (node.oscillator) {
+        node.oscillator.stop();
+        node.oscillator.disconnect();
+      }
+      if (node.gain) {
+        node.gain.disconnect();
+      }
     });
     voiceNodes.current.clear();
 
     // Create new synthesizers for each voice
     harmony.forEach(voice => {
-      const synthesizer = new FormantSynthesizer(audioContext);
-      synthesizer.connect(outputGain);
-
-      // Apply individual voice volume
       const volume = voiceVolumes[voice.name];
       
-      // Synthesize with formants
-      synthesizer.synthesizeVowel(
-        voice.frequency,
-        synthSettings.vowel,
-        voice.name,
-        volume
-      );
+      if (synthSettings.useFormants) {
+        // Use formant synthesis
+        const synthesizer = new FormantSynthesizer(audioContext);
+        synthesizer.connect(outputGain);
+        
+        synthesizer.synthesizeVowel(
+          voice.frequency,
+          synthSettings.vowel,
+          voice.name,
+          volume
+        );
 
-      voiceNodes.current.set(voice.name, { 
-        synthesizer, 
-        voiceType: voice.name 
-      });
+        voiceNodes.current.set(voice.name, { 
+          synthesizer, 
+          voiceType: voice.name 
+        });
+      } else {
+        // Use simple oscillator synthesis
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        // Use different waveforms for different voices
+        if (voice.name === 'bass') {
+          osc.type = 'triangle';
+        } else if (voice.name === 'tenor') {
+          osc.type = 'sawtooth';
+        } else {
+          osc.type = 'sine';
+        }
+
+        osc.frequency.setValueAtTime(voice.frequency, audioContext.currentTime);
+        gain.gain.setValueAtTime(volume * 0.2, audioContext.currentTime);
+
+        osc.connect(gain);
+        gain.connect(outputGain);
+        osc.start();
+
+        voiceNodes.current.set(voice.name, { 
+          oscillator: osc,
+          gain,
+          voiceType: voice.name 
+        });
+      }
     });
   }, [audioContext, outputGain, voiceVolumes, synthSettings]);
 
@@ -78,25 +116,29 @@ export const useFormantSynthesizer = (
     // Update volume for currently playing voice
     const node = voiceNodes.current.get(voiceName);
     if (node && audioContext) {
-      // Re-synthesize with new volume
-      const currentVoice = Array.from(voiceNodes.current.entries())
-        .find(([name]) => name === voiceName);
-      
-      if (currentVoice) {
-        node.synthesizer.synthesizeVowel(
-          440, // This should be the current frequency
-          synthSettings.vowel,
-          voiceName,
-          volume
-        );
+      if (node.gain) {
+        // Simple oscillator mode
+        node.gain.gain.setValueAtTime(volume * 0.2, audioContext.currentTime);
+      } else if (node.synthesizer) {
+        // Formant mode - would need to re-synthesize
+        // For now, just update the stored volume
       }
     }
   }, [audioContext, synthSettings.vowel]);
 
   const stopAllVoices = useCallback(() => {
     voiceNodes.current.forEach(node => {
-      node.synthesizer.stop();
-      node.synthesizer.disconnect();
+      if (node.synthesizer) {
+        node.synthesizer.stop();
+        node.synthesizer.disconnect();
+      }
+      if (node.oscillator) {
+        node.oscillator.stop();
+        node.oscillator.disconnect();
+      }
+      if (node.gain) {
+        node.gain.disconnect();
+      }
     });
     voiceNodes.current.clear();
   }, []);

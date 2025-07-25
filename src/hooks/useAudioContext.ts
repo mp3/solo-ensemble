@@ -49,7 +49,9 @@ export const useAudioContext = () => {
       audioNodes.current.destination = destination;
 
       // Load and create pitch detector worklet
-      await context.audioWorklet.addModule('/src/worklets/pitch-detector.js');
+      // Use dynamic import for the worklet
+      const workletUrl = new URL('../worklets/pitch-detector.js', import.meta.url).href;
+      await context.audioWorklet.addModule(workletUrl);
       const pitchDetectorNode = new AudioWorkletNode(context, 'pitch-detector');
       audioNodes.current.pitchDetectorNode = pitchDetectorNode;
 
