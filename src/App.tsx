@@ -140,10 +140,10 @@ function App() {
     setAudioNodes(audioNodes.context, audioNodes.outputGain);
   }, [audioNodes.context, audioNodes.outputGain, setAudioNodes]);
   
-  // Re-synthesize when audio context becomes available
+  // Synthesize when audio context is available and harmony changes
   useEffect(() => {
     if (audioNodes.context && audioNodes.outputGain && harmony.length > 0) {
-      console.log('Audio context ready, re-synthesizing harmony');
+      console.log('Synthesizing harmony:', harmony.length, 'voices');
       synthesizeVoices(harmony);
     }
   }, [audioNodes.context, audioNodes.outputGain, harmony, synthesizeVoices]);
@@ -170,10 +170,8 @@ function App() {
       
       setHarmony(newHarmony);
       
-      // Only synthesize if audio context is ready
-      if (audioNodes.context && audioNodes.outputGain) {
-        synthesizeVoices(newHarmony);
-      }
+      // Don't synthesize until audio is initialized
+      // The useEffect will handle synthesis when context is ready
       
       // Send harmony via MIDI if output is connected
       if (midiState.selectedOutput) {
