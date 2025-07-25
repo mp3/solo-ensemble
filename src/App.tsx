@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { AudioControls } from './components/AudioControls';
 import { PitchDisplay } from './components/PitchDisplay';
 import { HarmonyControls } from './components/HarmonyControls';
@@ -138,6 +138,14 @@ function App() {
     };
     saveSettings(currentSettings);
   }, [settings, loopState.bpm, voiceVolumes, synthSettings]);
+  
+  // Re-synthesize when audio context becomes available
+  useEffect(() => {
+    if (audioNodes.context && audioNodes.outputGain && harmony.length > 0) {
+      console.log('Audio context ready, re-synthesizing harmony');
+      synthesizeVoices(harmony);
+    }
+  }, [audioNodes.context, audioNodes.outputGain, harmony, synthesizeVoices]);
 
   const inputLevel = useLevelMeter(audioNodes.analyser);
 
@@ -182,15 +190,20 @@ function App() {
 
   const handleStartAudio = useCallback(async () => {
     try {
-      const { stream } = await initializeAudio(handlePitchData);
+      const { stream, context, nodes } = await initializeAudio(handlePitchData);
       streamRef.current = stream;
       setAudioState(prev => ({ ...prev, isStarted: true }));
       latencyRef.current = performance.now();
+      console.log('Audio initialized:', {
+        context,
+        nodes,
+        audioNodesAfter: audioNodes
+      });
     } catch (error) {
       console.error('Error starting audio:', error);
       alert('Could not access microphone. Please check permissions.');
     }
-  }, [initializeAudio, handlePitchData]);
+  }, [initializeAudio, handlePitchData, audioNodes]);
 
   const handleRecord = useCallback(() => {
     if (!isRecording) {
