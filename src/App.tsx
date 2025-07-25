@@ -16,8 +16,9 @@ import { SynthesizerControls } from './components/SynthesizerControls';
 import { KeyboardShortcuts } from './components/KeyboardShortcuts';
 import { UndoRedoControls } from './components/UndoRedoControls';
 import { useAudioContext } from './hooks/useAudioContext';
-import { useFormantSynthesizer } from './hooks/useFormantSynthesizer';
+// import { useFormantSynthesizer } from './hooks/useFormantSynthesizer';
 // import { useDebugSynthesizer } from './hooks/useDebugSynthesizer';
+import { useSimpleSynthesizer } from './hooks/useSimpleSynthesizer';
 import { useRecorderWithUndo } from './hooks/useRecorderWithUndo';
 import { useLevelMeter } from './hooks/useLevelMeter';
 import { useLooper } from './hooks/useLooper';
@@ -71,14 +72,9 @@ function App() {
     setVoiceVolume,
     synthSettings,
     setVowel,
-    toggleFormants
-  } = useFormantSynthesizer(
-    audioNodes.context,
-    audioNodes.outputGain,
-    savedSettings?.voiceVolumes,
-    savedSettings?.useFormants,
-    savedSettings?.vowel
-  );
+    toggleFormants,
+    setAudioNodes
+  } = useSimpleSynthesizer();
   const { 
     isRecording, 
     tracks, 
@@ -138,6 +134,11 @@ function App() {
     };
     saveSettings(currentSettings);
   }, [settings, loopState.bpm, voiceVolumes, synthSettings]);
+  
+  // Update synthesizer when audio nodes change
+  useEffect(() => {
+    setAudioNodes(audioNodes.context, audioNodes.outputGain);
+  }, [audioNodes.context, audioNodes.outputGain, setAudioNodes]);
   
   // Re-synthesize when audio context becomes available
   useEffect(() => {
