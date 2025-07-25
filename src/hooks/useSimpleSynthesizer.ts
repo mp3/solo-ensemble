@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import { HarmonyVoice } from '../types';
 import { FormantSynthesizer } from '../utils/formantSynthesis';
 
@@ -116,7 +116,7 @@ export const useSimpleSynthesizer = (
     setVoiceVolumes(prev => ({ ...prev, [voiceName]: volume }));
     
     const node = voiceNodes.current.get(voiceName);
-    if (node && audioContext) {
+    if (node && node.gain && audioContext) {
       node.gain.gain.setValueAtTime(volume * 0.2, audioContext.currentTime);
     }
   }, [audioContext]);

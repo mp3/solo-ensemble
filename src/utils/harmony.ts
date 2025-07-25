@@ -29,7 +29,7 @@ const getScaleNotes = (root: string, scale: Scale): number[] => {
   return intervals.map(interval => (rootIndex + interval) % 12);
 };
 
-const generateTriad = (rootMidi: number, scaleNotes: number[]): HarmonyVoice[] => {
+const generateTriad = (rootMidi: number): HarmonyVoice[] => {
   const third = rootMidi + scaleIntervals.major[2]!;
   const fifth = rootMidi + scaleIntervals.major[4]!;
   
@@ -61,7 +61,7 @@ const generateTriad = (rootMidi: number, scaleNotes: number[]): HarmonyVoice[] =
   ];
 };
 
-const generateSATB = (rootMidi: number, scaleNotes: number[]): HarmonyVoice[] => {
+const generateSATB = (rootMidi: number): HarmonyVoice[] => {
   const bass = rootMidi - 12;
   const tenor = rootMidi;
   const alto = rootMidi + scaleIntervals.major[2]!;
@@ -95,7 +95,7 @@ const generateSATB = (rootMidi: number, scaleNotes: number[]): HarmonyVoice[] =>
   ];
 };
 
-const generateCloseHarmony = (rootMidi: number, scaleNotes: number[]): HarmonyVoice[] => {
+const generateCloseHarmony = (rootMidi: number): HarmonyVoice[] => {
   return [
     {
       name: 'bass',
@@ -124,7 +124,7 @@ const generateCloseHarmony = (rootMidi: number, scaleNotes: number[]): HarmonyVo
   ];
 };
 
-const generateOpenHarmony = (rootMidi: number, scaleNotes: number[]): HarmonyVoice[] => {
+const generateOpenHarmony = (rootMidi: number): HarmonyVoice[] => {
   return [
     {
       name: 'bass',
@@ -156,23 +156,22 @@ const generateOpenHarmony = (rootMidi: number, scaleNotes: number[]): HarmonyVoi
 export const generateHarmony = (
   rootNote: string,
   octave: number,
-  scale: Scale,
+  _scale: Scale,
   voicing: VoicingType
 ): HarmonyVoice[] => {
   const rootMidi = noteToMidi(rootNote, octave);
-  const scaleNotes = getScaleNotes(rootNote, scale);
   
   switch (voicing) {
     case 'triad':
-      return generateTriad(rootMidi, scaleNotes);
+      return generateTriad(rootMidi);
     case 'satb':
-      return generateSATB(rootMidi, scaleNotes);
+      return generateSATB(rootMidi);
     case 'close':
-      return generateCloseHarmony(rootMidi, scaleNotes);
+      return generateCloseHarmony(rootMidi);
     case 'open':
-      return generateOpenHarmony(rootMidi, scaleNotes);
+      return generateOpenHarmony(rootMidi);
     default:
-      return generateTriad(rootMidi, scaleNotes);
+      return generateTriad(rootMidi);
   }
 };
 
@@ -182,7 +181,6 @@ export const quantizeToScale = (
   key: string,
   scale: Scale
 ): { note: string; octave: number; midi: number } => {
-  const detectedMidi = noteToMidi(detectedNote, detectedOctave);
   const scaleNotes = getScaleNotes(key, scale);
   const detectedNoteIndex = noteNames.indexOf(detectedNote);
   

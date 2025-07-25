@@ -24,12 +24,12 @@ export function useUndoRedo<T>(initialState: T, maxHistorySize: number = 50) {
       // If we're in an undo/redo operation, just update the present
       setHistory(prev => ({
         ...prev,
-        present: typeof newState === 'function' ? newState(prev.present) : newState
+        present: typeof newState === 'function' ? (newState as (prev: T) => T)(prev.present) : newState
       }));
     } else {
       // Normal state update - add current state to past and clear future
       setHistory(prev => {
-        const actualNewState = typeof newState === 'function' ? newState(prev.present) : newState;
+        const actualNewState = typeof newState === 'function' ? (newState as (prev: T) => T)(prev.present) : newState;
         const newPast = [...prev.past, prev.present];
         
         // Limit history size

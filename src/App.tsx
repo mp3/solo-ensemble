@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { AudioControls } from './components/AudioControls';
 import { PitchDisplay } from './components/PitchDisplay';
 import { HarmonyControls } from './components/HarmonyControls';
@@ -15,6 +15,7 @@ import { MIDIControls } from './components/MIDIControls';
 import { SynthesizerControls } from './components/SynthesizerControls';
 import { KeyboardShortcuts } from './components/KeyboardShortcuts';
 import { UndoRedoControls } from './components/UndoRedoControls';
+import { LatencyTester } from './components/LatencyTester';
 import { useAudioContext } from './hooks/useAudioContext';
 import { useSimpleSynthesizer } from './hooks/useSimpleSynthesizer';
 import { useRecorderWithUndo } from './hooks/useRecorderWithUndo';
@@ -411,6 +412,12 @@ function App() {
                   onOutputChange={setMIDIOutput}
                 />
               </div>
+              
+              <LatencyTester
+                audioContext={audioNodes.context}
+                outputGain={audioNodes.outputGain}
+              />
+              
               <KeyboardShortcuts shortcuts={shortcuts} />
             </>
           )}

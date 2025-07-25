@@ -60,7 +60,8 @@ export const useMIDI = () => {
     const [status, note, velocity] = event.data;
     
     // Note on message (status 144-159)
-    if (status >= 144 && status <= 159 && velocity > 0) {
+    if (status !== undefined && note !== undefined && velocity !== undefined &&
+        status >= 144 && status <= 159 && velocity > 0) {
       const noteInfo: NoteInfo = {
         midi: note,
         note: getNoteNameFromMIDI(note),

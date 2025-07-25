@@ -84,6 +84,8 @@ export class FormantSynthesizer {
     }
 
     // Create formant filters
+    if (!formants) return;
+    
     const formantFrequencies = [
       formants.f1 * modifier.f1,
       formants.f2 * modifier.f2,
@@ -94,7 +96,7 @@ export class FormantSynthesizer {
       const filter = this.context.createBiquadFilter();
       filter.type = 'bandpass';
       filter.frequency.setValueAtTime(freq, this.context.currentTime);
-      filter.Q.setValueAtTime(freq / formants.bandwidth[index]!, this.context.currentTime);
+      filter.Q.setValueAtTime(freq / (formants.bandwidth[index] || 100), this.context.currentTime);
       
       this.masterGain.connect(filter);
       filter.connect(this.output);
