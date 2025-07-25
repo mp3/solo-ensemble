@@ -1,116 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Solo Ensemble - Real-time Vocal Harmonizer</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Solo Ensemble</h1>
-            <p>Real-time vocal harmonizer with looping recorder</p>
-        </header>
-
-        <section class="controls">
-            <div class="audio-setup">
-                <button id="start-audio" class="primary-btn">Start Audio</button>
-                <div id="latency-display" class="metric">Latency: -- ms</div>
-            </div>
-
-            <div class="pitch-display">
-                <div class="detected-note">
-                    <span class="label">Detected Note:</span>
-                    <span id="current-note" class="note-value">--</span>
-                    <div class="confidence-bar">
-                        <div id="confidence-fill" class="confidence-fill"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="harmony-controls">
-                <div class="control-group">
-                    <label for="key-select">Key:</label>
-                    <select id="key-select">
-                        <option value="C">C</option>
-                        <option value="C#">C#</option>
-                        <option value="D">D</option>
-                        <option value="D#">D#</option>
-                        <option value="E">E</option>
-                        <option value="F">F</option>
-                        <option value="F#">F#</option>
-                        <option value="G">G</option>
-                        <option value="G#">G#</option>
-                        <option value="A">A</option>
-                        <option value="A#">A#</option>
-                        <option value="B">B</option>
-                    </select>
-                </div>
-
-                <div class="control-group">
-                    <label for="scale-select">Scale:</label>
-                    <select id="scale-select">
-                        <option value="major">Major</option>
-                        <option value="minor">Minor</option>
-                    </select>
-                </div>
-
-                <div class="control-group">
-                    <label for="voicing-select">Voicing:</label>
-                    <select id="voicing-select">
-                        <option value="triad">Triad</option>
-                        <option value="satb">SATB</option>
-                        <option value="close">Close Harmony</option>
-                        <option value="open">Open Harmony</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="harmony-display">
-                <div class="label">Harmony Notes:</div>
-                <div id="harmony-notes" class="harmony-notes">
-                    <span class="harmony-note" data-voice="soprano">--</span>
-                    <span class="harmony-note" data-voice="alto">--</span>
-                    <span class="harmony-note" data-voice="tenor">--</span>
-                    <span class="harmony-note" data-voice="bass">--</span>
-                </div>
-            </div>
-
-            <div class="level-meters">
-                <div class="meter-group">
-                    <label>Input</label>
-                    <div class="meter">
-                        <div id="input-level" class="meter-fill"></div>
-                    </div>
-                </div>
-                <div class="meter-group">
-                    <label>Output</label>
-                    <div class="meter">
-                        <div id="output-level" class="meter-fill"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="recorder-controls">
-                <button id="record-btn" class="record-btn">Record</button>
-                <button id="play-btn" class="play-btn">Play</button>
-                <button id="stop-btn" class="stop-btn">Stop</button>
-                <button id="clear-btn" class="clear-btn">Clear</button>
-                <div class="loop-info">
-                    <span>Loop: </span>
-                    <span id="current-bar">1</span>
-                    <span> / 4 bars @ 120 BPM</span>
-                </div>
-            </div>
-
-            <div class="tracks-display">
-                <div class="label">Recorded Tracks:</div>
-                <div id="tracks-list" class="tracks-list"></div>
-            </div>
-        </section>
-    </div>
-
-    <script type="module" src="solo-ensemble.js"></script>
-</body>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
