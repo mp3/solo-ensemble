@@ -16,8 +16,6 @@ import { SynthesizerControls } from './components/SynthesizerControls';
 import { KeyboardShortcuts } from './components/KeyboardShortcuts';
 import { UndoRedoControls } from './components/UndoRedoControls';
 import { useAudioContext } from './hooks/useAudioContext';
-// import { useFormantSynthesizer } from './hooks/useFormantSynthesizer';
-// import { useDebugSynthesizer } from './hooks/useDebugSynthesizer';
 import { useSimpleSynthesizer } from './hooks/useSimpleSynthesizer';
 import { useRecorderWithUndo } from './hooks/useRecorderWithUndo';
 import { useLevelMeter } from './hooks/useLevelMeter';
@@ -147,7 +145,6 @@ function App() {
   // Synthesize when audio context is available and harmony or settings change
   useEffect(() => {
     if (audioNodes.context && audioNodes.outputGain && harmony.length > 0) {
-      console.log('Synthesizing harmony:', harmony.length, 'voices');
       synthesizeVoices(harmony);
     }
   }, [audioNodes.context, audioNodes.outputGain, harmony, synthesizeVoices, synthSettings]);
@@ -193,20 +190,15 @@ function App() {
 
   const handleStartAudio = useCallback(async () => {
     try {
-      const { stream, context, nodes } = await initializeAudio(handlePitchData);
+      const { stream } = await initializeAudio(handlePitchData);
       streamRef.current = stream;
       setAudioState(prev => ({ ...prev, isStarted: true }));
       latencyRef.current = performance.now();
-      console.log('Audio initialized:', {
-        context,
-        nodes,
-        audioNodesAfter: audioNodes
-      });
     } catch (error) {
       console.error('Error starting audio:', error);
       alert('Could not access microphone. Please check permissions.');
     }
-  }, [initializeAudio, handlePitchData, audioNodes]);
+  }, [initializeAudio, handlePitchData]);
 
   const handleRecord = useCallback(() => {
     if (!isRecording) {

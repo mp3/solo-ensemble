@@ -1,5 +1,5 @@
 import React from 'react';
-import { SynthesizerSettings } from '../hooks/useFormantSynthesizer';
+import { SynthesizerSettings } from '../hooks/useSimpleSynthesizer';
 
 interface SynthesizerControlsProps {
   settings: SynthesizerSettings;

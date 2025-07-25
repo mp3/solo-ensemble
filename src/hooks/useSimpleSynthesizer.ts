@@ -42,21 +42,12 @@ export const useSimpleSynthesizer = (
 
   // Method to set audio nodes
   const setAudioNodes = useCallback((context: AudioContext | null, gain: GainNode | null) => {
-    console.log('Setting audio nodes:', { context: !!context, gain: !!gain });
     setAudioContext(context);
     setOutputGain(gain);
   }, []);
 
   const synthesizeVoices = useCallback((harmony: HarmonyVoice[]) => {
-    console.log('Synthesizer: synthesizeVoices called', {
-      harmony,
-      hasContext: !!audioContext,
-      hasOutputGain: !!outputGain,
-      mode: synthSettings.useFormants ? 'formant' : 'simple'
-    });
-    
     if (!audioContext || !outputGain) {
-      console.error('Synthesizer: Missing audio context or output gain');
       return;
     }
 
@@ -95,7 +86,6 @@ export const useSimpleSynthesizer = (
           volume
         );
         voiceNodes.current.set(voice.name, { synthesizer });
-        console.log(`Started formant synthesizer for ${voice.name} at ${voice.frequency}Hz`);
       } else {
         // Use simple oscillator synthesis
         const osc = audioContext.createOscillator();
@@ -118,7 +108,6 @@ export const useSimpleSynthesizer = (
         
         osc.start();
         voiceNodes.current.set(voice.name, { oscillator: osc, gain });
-        console.log(`Started oscillator for ${voice.name} at ${voice.frequency}Hz`);
       }
     });
   }, [audioContext, outputGain, voiceVolumes, synthSettings]);
