@@ -11,12 +11,17 @@ import { WaveformDisplay } from './components/WaveformDisplay';
 import { SpectrumAnalyzer } from './components/SpectrumAnalyzer';
 import { ExportControls } from './components/ExportControls';
 import { MetronomeControls } from './components/MetronomeControls';
+import { MIDIControls } from './components/MIDIControls';
+import { SynthesizerControls } from './components/SynthesizerControls';
+import { KeyboardShortcuts } from './components/KeyboardShortcuts';
 import { useAudioContext } from './hooks/useAudioContext';
-import { useSynthesizer } from './hooks/useSynthesizer';
+import { useFormantSynthesizer } from './hooks/useFormantSynthesizer';
 import { useRecorder } from './hooks/useRecorder';
 import { useLevelMeter } from './hooks/useLevelMeter';
 import { useLooper } from './hooks/useLooper';
 import { useMetronome } from './hooks/useMetronome';
+import { useMIDI } from './hooks/useMIDI';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { generateHarmony, quantizeToScale } from './utils/harmony';
 import { 
   PitchData, 
@@ -54,7 +59,14 @@ function App() {
   const latencyRef = useRef<number>(0);
 
   const { audioNodes, initializeAudio } = useAudioContext();
-  const { synthesizeVoices, voiceVolumes, setVoiceVolume } = useSynthesizer(
+  const { 
+    synthesizeVoices, 
+    voiceVolumes, 
+    setVoiceVolume,
+    synthSettings,
+    setVowel,
+    toggleFormants
+  } = useFormantSynthesizer(
     audioNodes.context,
     audioNodes.outputGain
   );
@@ -79,6 +91,14 @@ function App() {
   );
   
   const { metronomeState, toggleMetronome, setBpm } = useMetronome(audioNodes.context);
+  
+  const { 
+    midiState, 
+    setMIDIInput, 
+    setMIDIOutput, 
+    sendHarmonyMIDI,
+    onNoteReceived 
+  } = useMIDI();
   
   // Sync metronome BPM with loop state
   useEffect(() => {
@@ -107,6 +127,12 @@ function App() {
       
       setHarmony(newHarmony);
       synthesizeVoices(newHarmony);
+      
+      // Send harmony via MIDI if output is connected
+      if (midiState.selectedOutput) {
+        const midiNotes = newHarmony.map(voice => voice.midi);
+        sendHarmonyMIDI(midiNotes);
+      }
       
       // Update latency
       const now = performance.now();
@@ -169,6 +195,35 @@ function App() {
   useEffect(() => {
     setAudioState(prev => ({ ...prev, inputLevel }));
   }, [inputLevel]);
+  
+  // Setup MIDI note input handling
+  useEffect(() => {
+    onNoteReceived((note) => {
+      // Convert MIDI note to pitch data
+      const frequency = 440 * Math.pow(2, (note.midi - 69) / 12);
+      const pitchData: PitchData = {
+        pitch: frequency,
+        confidence: 1.0,
+        note: note,
+        timestamp: performance.now()
+      };
+      handlePitchData(pitchData);
+    });
+  }, [onNoteReceived, handlePitchData]);
+  
+  // Setup keyboard shortcuts
+  const { shortcuts } = useKeyboardShortcuts({
+    onRecord: handleRecord,
+    onPlay: handlePlay,
+    onStop: handleStop,
+    onClear: clearTracks,
+    onMetronome: toggleMetronome,
+    onExport: () => {
+      // Trigger export programmatically
+      const exportBtn = document.querySelector('[data-export-button]') as HTMLButtonElement;
+      exportBtn?.click();
+    }
+  }, audioState.isStarted);
 
   return (
     <div className="min-h-screen bg-background">
@@ -271,11 +326,32 @@ function App() {
                   disabled={!audioState.isStarted}
                 />
                 
-                <ExportControls
-                  tracks={tracks}
-                  disabled={looperState.isPlaying || isRecording}
+                <div data-export-button>
+                  <ExportControls
+                    tracks={tracks}
+                    disabled={looperState.isPlaying || isRecording}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <SynthesizerControls
+                  settings={synthSettings}
+                  onVowelChange={setVowel}
+                  onToggleFormants={toggleFormants}
+                />
+                
+                <MIDIControls
+                  isConnected={midiState.isConnected}
+                  inputs={midiState.inputs}
+                  outputs={midiState.outputs}
+                  selectedInput={midiState.selectedInput}
+                  selectedOutput={midiState.selectedOutput}
+                  onInputChange={setMIDIInput}
+                  onOutputChange={setMIDIOutput}
                 />
               </div>
+              <KeyboardShortcuts shortcuts={shortcuts} />
             </>
           )}
         </div>
