@@ -14,14 +14,16 @@ import { MetronomeControls } from './components/MetronomeControls';
 import { MIDIControls } from './components/MIDIControls';
 import { SynthesizerControls } from './components/SynthesizerControls';
 import { KeyboardShortcuts } from './components/KeyboardShortcuts';
+import { UndoRedoControls } from './components/UndoRedoControls';
 import { useAudioContext } from './hooks/useAudioContext';
 import { useFormantSynthesizer } from './hooks/useFormantSynthesizer';
-import { useRecorder } from './hooks/useRecorder';
+import { useRecorderWithUndo } from './hooks/useRecorderWithUndo';
 import { useLevelMeter } from './hooks/useLevelMeter';
 import { useLooper } from './hooks/useLooper';
 import { useMetronome } from './hooks/useMetronome';
 import { useMIDI } from './hooks/useMIDI';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { saveSettings, loadSettings, SavedSettings } from './utils/localStorage';
 import { generateHarmony, quantizeToScale } from './utils/harmony';
 import { 
   PitchData, 
@@ -32,6 +34,9 @@ import {
 } from './types';
 
 function App() {
+  // Load saved settings on mount
+  const savedSettings = loadSettings();
+  
   const [audioState, setAudioState] = useState<AudioState>({
     isStarted: false,
     latency: 0,
@@ -46,13 +51,13 @@ function App() {
     isPlaying: false,
     currentBar: 1,
     totalBars: 4,
-    bpm: 120
+    bpm: savedSettings?.bpm || 120
   });
 
   const [settings, setSettings] = useState<HarmonySettings>({
-    key: 'C',
-    scale: 'major',
-    voicing: 'triad'
+    key: savedSettings?.key || 'C',
+    scale: savedSettings?.scale || 'major',
+    voicing: savedSettings?.voicing || 'triad'
   });
 
   const streamRef = useRef<MediaStream | null>(null);
@@ -68,9 +73,23 @@ function App() {
     toggleFormants
   } = useFormantSynthesizer(
     audioNodes.context,
-    audioNodes.outputGain
+    audioNodes.outputGain,
+    savedSettings?.voiceVolumes,
+    savedSettings?.useFormants,
+    savedSettings?.vowel
   );
-  const { isRecording, tracks, startRecording, stopRecording, clearTracks } = useRecorder(
+  const { 
+    isRecording, 
+    tracks, 
+    startRecording, 
+    stopRecording, 
+    clearTracks,
+    deleteTrack,
+    undo,
+    redo,
+    canUndo,
+    canRedo
+  } = useRecorderWithUndo(
     streamRef.current,
     audioNodes.context
   );
@@ -104,6 +123,20 @@ function App() {
   useEffect(() => {
     setBpm(loopState.bpm);
   }, [loopState.bpm, setBpm]);
+  
+  // Save settings when they change
+  useEffect(() => {
+    const currentSettings: SavedSettings = {
+      key: settings.key,
+      scale: settings.scale,
+      voicing: settings.voicing,
+      bpm: loopState.bpm,
+      voiceVolumes,
+      useFormants: synthSettings.useFormants,
+      vowel: synthSettings.vowel
+    };
+    saveSettings(currentSettings);
+  }, [settings, loopState.bpm, voiceVolumes, synthSettings]);
 
   const inputLevel = useLevelMeter(audioNodes.analyser);
 
@@ -222,7 +255,9 @@ function App() {
       // Trigger export programmatically
       const exportBtn = document.querySelector('[data-export-button]') as HTMLButtonElement;
       exportBtn?.click();
-    }
+    },
+    onUndo: undo,
+    onRedo: redo
   }, audioState.isStarted);
 
   return (
@@ -294,18 +329,29 @@ function App() {
                 <LevelMeter label="Output" level={audioState.outputLevel} />
               </div>
 
-              <RecorderControls
-                loopState={{ 
-                  ...loopState, 
-                  isRecording,
-                  isPlaying: looperState.isPlaying,
-                  currentBar: looperState.isPlaying ? looperState.currentBar : loopState.currentBar
-                }}
-                onRecord={handleRecord}
-                onPlay={handlePlay}
-                onStop={handleStop}
-                onClear={clearTracks}
-              />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <RecorderControls
+                    loopState={{ 
+                      ...loopState, 
+                      isRecording,
+                      isPlaying: looperState.isPlaying,
+                      currentBar: looperState.isPlaying ? looperState.currentBar : loopState.currentBar
+                    }}
+                    onRecord={handleRecord}
+                    onPlay={handlePlay}
+                    onStop={handleStop}
+                    onClear={clearTracks}
+                  />
+                  
+                  <UndoRedoControls
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    onUndo={undo}
+                    onRedo={redo}
+                  />
+                </div>
+              </div>
 
               <TrackList 
                 tracks={tracks}
@@ -313,6 +359,7 @@ function App() {
                 soloedTracks={soloedTracks}
                 onToggleMute={toggleMute}
                 onToggleSolo={toggleSolo}
+                onDeleteTrack={deleteTrack}
               />
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

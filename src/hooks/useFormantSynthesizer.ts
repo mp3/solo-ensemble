@@ -19,9 +19,15 @@ export interface SynthesizerSettings {
   vowel: string;
 }
 
-export const useFormantSynthesizer = (audioContext: AudioContext | null, outputGain: GainNode | null) => {
+export const useFormantSynthesizer = (
+  audioContext: AudioContext | null, 
+  outputGain: GainNode | null,
+  initialVolumes?: VoiceVolumes,
+  initialUseFormants?: boolean,
+  initialVowel?: string
+) => {
   const voiceNodes = useRef<Map<string, VoiceNode>>(new Map());
-  const [voiceVolumes, setVoiceVolumes] = useState<VoiceVolumes>({
+  const [voiceVolumes, setVoiceVolumes] = useState<VoiceVolumes>(initialVolumes || {
     soprano: 0.25,
     alto: 0.25,
     tenor: 0.25,
@@ -29,8 +35,8 @@ export const useFormantSynthesizer = (audioContext: AudioContext | null, outputG
   });
 
   const [synthSettings, setSynthSettings] = useState<SynthesizerSettings>({
-    useFormants: true,
-    vowel: 'ah'
+    useFormants: initialUseFormants ?? true,
+    vowel: initialVowel || 'ah'
   });
 
   const synthesizeVoices = useCallback((harmony: HarmonyVoice[]) => {

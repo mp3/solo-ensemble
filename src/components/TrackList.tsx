@@ -7,6 +7,7 @@ interface TrackListProps {
   soloedTracks?: Set<string>;
   onToggleMute?: (trackId: string) => void;
   onToggleSolo?: (trackId: string) => void;
+  onDeleteTrack?: (trackId: string) => void;
 }
 
 export const TrackList: React.FC<TrackListProps> = ({ 
@@ -14,7 +15,8 @@ export const TrackList: React.FC<TrackListProps> = ({
   mutedTracks = new Set(),
   soloedTracks = new Set(),
   onToggleMute,
-  onToggleSolo
+  onToggleSolo,
+  onDeleteTrack
 }) => {
   const hasSoloedTracks = soloedTracks.size > 0;
 
@@ -66,6 +68,28 @@ export const TrackList: React.FC<TrackListProps> = ({
                     M
                   </button>
                 </div>
+              )}
+              
+              {onDeleteTrack && (
+                <button
+                  onClick={() => onDeleteTrack(track.id)}
+                  className="p-1 rounded hover:bg-red-600 transition-all"
+                  title="Delete track"
+                >
+                  <svg
+                    className="w-4 h-4 text-gray-400 hover:text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
               )}
               
               <span className="text-sm text-text-secondary">Ready</span>
