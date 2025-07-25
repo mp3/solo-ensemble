@@ -7,6 +7,11 @@ interface LooperState {
   nextLoopTime: number;
 }
 
+interface TrackNode {
+  source: AudioBufferSourceNode;
+  gain: GainNode;
+}
+
 export const useLooper = (
   audioContext: AudioContext | null,
   outputGain: GainNode | null,
@@ -20,7 +25,9 @@ export const useLooper = (
   });
 
   const schedulerRef = useRef<number | null>(null);
-  const playbackSourcesRef = useRef<Map<string, AudioBufferSourceNode>>(new Map());
+  const trackNodesRef = useRef<Map<string, TrackNode>>(new Map());
+  const mutedTracksRef = useRef<Set<string>>(new Set());
+  const soloedTracksRef = useRef<Set<string>>(new Set());
 
   // Calculate timing constants
   const secondsPerBeat = 60 / bpm;
@@ -29,30 +36,62 @@ export const useLooper = (
   const scheduleAheadTime = 0.1; // Schedule 100ms ahead
   const schedulerInterval = 25; // Run scheduler every 25ms
 
+  const updateTrackGain = useCallback((trackId: string) => {
+    const node = trackNodesRef.current.get(trackId);
+    if (!node || !audioContext) return;
+
+    const hasSoloedTracks = soloedTracksRef.current.size > 0;
+    let shouldPlay = false;
+
+    if (hasSoloedTracks) {
+      shouldPlay = soloedTracksRef.current.has(trackId);
+    } else {
+      shouldPlay = !mutedTracksRef.current.has(trackId);
+    }
+
+    node.gain.gain.setValueAtTime(shouldPlay ? 1 : 0, audioContext.currentTime);
+  }, [audioContext]);
+
   const scheduleTrack = useCallback((track: Track, when: number) => {
     if (!audioContext || !outputGain) return;
 
     // Stop any existing playback of this track
-    const existingSource = playbackSourcesRef.current.get(track.id);
-    if (existingSource) {
-      existingSource.stop();
-      existingSource.disconnect();
+    const existingNode = trackNodesRef.current.get(track.id);
+    if (existingNode) {
+      existingNode.source.stop();
+      existingNode.source.disconnect();
+      existingNode.gain.disconnect();
     }
 
-    // Create new source
+    // Create new source with gain node for mute/solo
     const source = audioContext.createBufferSource();
+    const gain = audioContext.createGain();
+    
     source.buffer = track.audioBuffer;
     source.loop = true;
     source.loopEnd = loopDuration;
     
-    // Connect to output
-    source.connect(outputGain);
+    // Connect through gain node
+    source.connect(gain);
+    gain.connect(outputGain);
+    
+    // Apply mute/solo state
+    const hasSoloedTracks = soloedTracksRef.current.size > 0;
+    let shouldPlay = false;
+    
+    if (hasSoloedTracks) {
+      shouldPlay = soloedTracksRef.current.has(track.id);
+    } else {
+      shouldPlay = !mutedTracksRef.current.has(track.id);
+    }
+    
+    gain.gain.setValueAtTime(shouldPlay ? 1 : 0, when);
     
     // Start playback
     source.start(when);
     
     // Store reference
-    playbackSourcesRef.current.set(track.id, source);
+    trackNodesRef.current.set(track.id, { source, gain });
   }, [audioContext, outputGain, loopDuration]);
 
   const scheduler = useCallback((tracks: Track[]) => {
@@ -116,11 +155,12 @@ export const useLooper = (
     }
 
     // Stop all playing sources
-    playbackSourcesRef.current.forEach(source => {
-      source.stop();
-      source.disconnect();
+    trackNodesRef.current.forEach(node => {
+      node.source.stop();
+      node.source.disconnect();
+      node.gain.disconnect();
     });
-    playbackSourcesRef.current.clear();
+    trackNodesRef.current.clear();
 
     // Reset state
     setLooperState({
@@ -130,9 +170,35 @@ export const useLooper = (
     });
   }, []);
 
+  const toggleMute = useCallback((trackId: string) => {
+    if (mutedTracksRef.current.has(trackId)) {
+      mutedTracksRef.current.delete(trackId);
+    } else {
+      mutedTracksRef.current.add(trackId);
+    }
+    updateTrackGain(trackId);
+  }, [updateTrackGain]);
+
+  const toggleSolo = useCallback((trackId: string) => {
+    if (soloedTracksRef.current.has(trackId)) {
+      soloedTracksRef.current.delete(trackId);
+    } else {
+      soloedTracksRef.current.add(trackId);
+    }
+    
+    // Update all track gains when solo state changes
+    trackNodesRef.current.forEach((_, id) => {
+      updateTrackGain(id);
+    });
+  }, [updateTrackGain]);
+
   return {
     looperState,
     startPlayback,
-    stopPlayback
+    stopPlayback,
+    toggleMute,
+    toggleSolo,
+    mutedTracks: mutedTracksRef.current,
+    soloedTracks: soloedTracksRef.current
   };
 };

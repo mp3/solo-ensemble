@@ -9,11 +9,14 @@ import { TrackList } from './components/TrackList';
 import { VoiceControls } from './components/VoiceControls';
 import { WaveformDisplay } from './components/WaveformDisplay';
 import { SpectrumAnalyzer } from './components/SpectrumAnalyzer';
+import { ExportControls } from './components/ExportControls';
+import { MetronomeControls } from './components/MetronomeControls';
 import { useAudioContext } from './hooks/useAudioContext';
 import { useSynthesizer } from './hooks/useSynthesizer';
 import { useRecorder } from './hooks/useRecorder';
 import { useLevelMeter } from './hooks/useLevelMeter';
 import { useLooper } from './hooks/useLooper';
+import { useMetronome } from './hooks/useMetronome';
 import { generateHarmony, quantizeToScale } from './utils/harmony';
 import { 
   PitchData, 
@@ -60,12 +63,27 @@ function App() {
     audioNodes.context
   );
   
-  const { looperState, startPlayback, stopPlayback } = useLooper(
+  const { 
+    looperState, 
+    startPlayback, 
+    stopPlayback,
+    toggleMute,
+    toggleSolo,
+    mutedTracks,
+    soloedTracks
+  } = useLooper(
     audioNodes.context,
     audioNodes.outputGain,
     loopState.bpm,
     loopState.totalBars
   );
+  
+  const { metronomeState, toggleMetronome, setBpm } = useMetronome(audioNodes.context);
+  
+  // Sync metronome BPM with loop state
+  useEffect(() => {
+    setBpm(loopState.bpm);
+  }, [loopState.bpm, setBpm]);
 
   const inputLevel = useLevelMeter(audioNodes.analyser);
 
@@ -234,7 +252,30 @@ function App() {
                 onClear={clearTracks}
               />
 
-              <TrackList tracks={tracks} />
+              <TrackList 
+                tracks={tracks}
+                mutedTracks={mutedTracks}
+                soloedTracks={soloedTracks}
+                onToggleMute={toggleMute}
+                onToggleSolo={toggleSolo}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <MetronomeControls
+                  metronomeState={metronomeState}
+                  onToggle={toggleMetronome}
+                  onBpmChange={(bpm) => {
+                    setBpm(bpm);
+                    setLoopState(prev => ({ ...prev, bpm }));
+                  }}
+                  disabled={!audioState.isStarted}
+                />
+                
+                <ExportControls
+                  tracks={tracks}
+                  disabled={looperState.isPlaying || isRecording}
+                />
+              </div>
             </>
           )}
         </div>
