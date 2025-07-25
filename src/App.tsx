@@ -16,8 +16,8 @@ import { SynthesizerControls } from './components/SynthesizerControls';
 import { KeyboardShortcuts } from './components/KeyboardShortcuts';
 import { UndoRedoControls } from './components/UndoRedoControls';
 import { useAudioContext } from './hooks/useAudioContext';
-// import { useFormantSynthesizer } from './hooks/useFormantSynthesizer';
-import { useDebugSynthesizer } from './hooks/useDebugSynthesizer';
+import { useFormantSynthesizer } from './hooks/useFormantSynthesizer';
+// import { useDebugSynthesizer } from './hooks/useDebugSynthesizer';
 import { useRecorderWithUndo } from './hooks/useRecorderWithUndo';
 import { useLevelMeter } from './hooks/useLevelMeter';
 import { useLooper } from './hooks/useLooper';
@@ -67,19 +67,18 @@ function App() {
   const { audioNodes, initializeAudio } = useAudioContext();
   const { 
     synthesizeVoices, 
-    stopAllVoices,
-    voiceVolumes,
-    testTone
-  } = useDebugSynthesizer(
+    voiceVolumes, 
+    setVoiceVolume,
+    synthSettings,
+    setVowel,
+    toggleFormants
+  } = useFormantSynthesizer(
     audioNodes.context,
-    audioNodes.outputGain
+    audioNodes.outputGain,
+    savedSettings?.voiceVolumes,
+    savedSettings?.useFormants,
+    savedSettings?.vowel
   );
-  
-  // Temporary placeholders for UI
-  const setVoiceVolume = () => {};
-  const synthSettings = { useFormants: false, vowel: 'ah' };
-  const setVowel = () => {};
-  const toggleFormants = () => {};
   const { 
     isRecording, 
     tracks, 
@@ -161,7 +160,11 @@ function App() {
       );
       
       setHarmony(newHarmony);
-      synthesizeVoices(newHarmony);
+      
+      // Only synthesize if audio context is ready
+      if (audioNodes.context && audioNodes.outputGain) {
+        synthesizeVoices(newHarmony);
+      }
       
       // Send harmony via MIDI if output is connected
       if (midiState.selectedOutput) {
@@ -175,7 +178,7 @@ function App() {
       setAudioState(prev => ({ ...prev, latency }));
       latencyRef.current = now;
     }
-  }, [settings, synthesizeVoices]);
+  }, [settings, synthesizeVoices, midiState.selectedOutput, sendHarmonyMIDI, audioNodes.context, audioNodes.outputGain]);
 
   const handleStartAudio = useCallback(async () => {
     try {
@@ -279,12 +282,6 @@ function App() {
 
           {audioState.isStarted && (
             <>
-              <button 
-                onClick={testTone}
-                className="bg-yellow-500 text-black px-4 py-2 rounded mx-auto"
-              >
-                Test Audio Output
-              </button>
               <PitchDisplay
                 note={currentPitch?.note || null}
                 confidence={currentPitch?.confidence || 0}

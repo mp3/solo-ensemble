@@ -42,7 +42,17 @@ export const useFormantSynthesizer = (
   });
 
   const synthesizeVoices = useCallback((harmony: HarmonyVoice[]) => {
-    if (!audioContext || !outputGain) return;
+    console.log('FormantSynthesizer: synthesizeVoices called', {
+      harmony,
+      hasContext: !!audioContext,
+      hasOutputGain: !!outputGain,
+      synthSettings
+    });
+    
+    if (!audioContext || !outputGain) {
+      console.error('FormantSynthesizer: Missing audio context or output gain');
+      return;
+    }
 
     // Stop existing synthesizers
     voiceNodes.current.forEach(node => {

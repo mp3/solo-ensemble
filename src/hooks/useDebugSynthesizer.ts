@@ -50,9 +50,14 @@ export const useDebugSynthesizer = (
 
   const synthesizeVoices = useCallback((harmony: HarmonyVoice[]) => {
     console.log('synthesizeVoices called with:', harmony);
+    console.log('audioContext:', audioContext);
+    console.log('outputGain:', outputGain);
     
     if (!audioContext || !outputGain) {
-      console.error('Missing audio context or output gain');
+      console.error('Missing audio context or output gain', {
+        audioContext: !!audioContext,
+        outputGain: !!outputGain
+      });
       return;
     }
 
