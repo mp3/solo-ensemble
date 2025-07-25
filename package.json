@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Real-time vocal harmonizer with looping recorder",
   "type": "module",
+  "packageManager": "pnpm@8.14.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
